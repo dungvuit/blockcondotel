@@ -58,10 +58,17 @@
                         'post_type' => 'product',
                         'posts_per_page' => 10,
                         'meta_query' => array(
+                            'relation' => 'AND',
                             array(
                                 'key' => 'project',
                                 'value' => get_the_ID(),
                             ),
+                            array(
+                                'key' => 'end_time',
+                                'value' => date('Y/m/d', strtotime("today")),
+                                'compare' => '>=',
+                                'type' => 'DATE'
+                            )
                         ),
                     ));
                     if($products->post_count > 0):

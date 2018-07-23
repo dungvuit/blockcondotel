@@ -24,6 +24,13 @@ if (!defined('MENU_NAME'))
     define('MENU_NAME', SHORT_NAME . "_settings");
 if (!defined('THEME_VER'))
     define('THEME_VER', "1.0");
+
+function get_api_urls(){
+    return array(
+        'http://chungcubinhdan.batdongsan.vn/wp-json/api/v1' => 'Chung cư bình dân',
+    );
+}
+
 /* ----------------------------------------------------------------------------------- */
 # Theme Options
 /* ----------------------------------------------------------------------------------- */
@@ -214,6 +221,11 @@ $options = array(
         array("name" => "Subiz License ID v4",
             "desc" => "Subiz sẽ ẩn trên Mobile. Ví dụ: acpynffovdjwbjdhhoxz",
             "id" => SHORT_NAME . "_subizID_v4",
+            "std" => "",
+            "type" => "text"),
+        array("name" => "Tawk Chat",
+            "desc" => "Site ID. Ví dụ: 571ef04ea2ce853d5f089277",
+            "id" => SHORT_NAME . "_tawkSiteID",
             "std" => "",
             "type" => "text"),
         array("name" => "Zopim Key",

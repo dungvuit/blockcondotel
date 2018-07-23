@@ -20,6 +20,7 @@ if (isset($_POST['bntSave'])) {
     $price = getRequest('price');
     $currency = getRequest('currency');
     $unitPrice = getRequest('unitPrice');
+    $com = getRequest('com');
     $area = getRequest('area');
     $vi_tri = getRequest('vi_tri');
     $mat_tien = getRequest('mat_tien');
@@ -28,10 +29,26 @@ if (isset($_POST['bntSave'])) {
     $so_tang = getRequest('so_tang');
     $so_phong = getRequest('so_phong');
     $toilet = getRequest('toilet');
+    $project = getRequest('project');
     $purpose_cat = getRequest('purpose_cat');
+    $special_cat = getRequest('special_cat');
     $post_title = getRequest('post_title');
     $post_content = getRequest('post_content');
+    $post_video = getRequest('post_video');
+    $post_maps = getRequest('post_maps');
+    $object_poster = getRequest('object_poster');
+    $product_permission = getRequest('product_permission');
+    $tin_vip = intval(getRequest('not_in_vip'));
+    $start_time = getRequest('start_time');
+    $start_time_arr = explode("/", $start_time);
+    if(count($start_time_arr) == 3){
+        $start_time = $start_time_arr[2] . "/" . $start_time_arr[1] . "/" . $start_time_arr[0];
+    }
     $end_time = getRequest('end_time');
+    $end_time_arr = explode("/", $end_time);
+    if(count($end_time_arr) == 3){
+        $end_time = $end_time_arr[2] . "/" . $end_time_arr[1] . "/" . $end_time_arr[0];
+    }
     $contact_name = getRequest('contact_name');
     $contact_tel = getRequest('contact_tel');
     $contact_email = getRequest('contact_email');
@@ -42,14 +59,20 @@ if (isset($_POST['bntSave'])) {
         'post_content' => $post_content,
         'post_status' => 'draft',
         'post_author' => $current_user->ID,
-        'tax_input' => array(
-            'product_category' => array($loaitin, $category),
-            'product_purpose' => $purpose_cat
-        ),
+//        'tax_input' => array(
+//            'product_category' => array($loaitin, $category),
+//            'product_purpose' => $purpose_cat,
+//            'product_special' => $special_cat,
+//        ),
     );
     $post_id = wp_insert_post($my_post);
     if ($post_id > 0) {
         $notify = "Bạn đã đăng dự án thành công!";
+        // update terms
+        wp_set_object_terms($post_id, array($loaitin, $category), 'product_category');
+        wp_set_object_terms($post_id, $purpose_cat, 'product_purpose');
+        wp_set_object_terms($post_id, $special_cat, 'product_special');
+        // update meta data
         update_post_meta($post_id, 'city', $city);
         update_post_meta($post_id, 'district', $district);
         update_post_meta($post_id, 'ward', $ward);
@@ -57,6 +80,7 @@ if (isset($_POST['bntSave'])) {
         update_post_meta($post_id, 'price', $price);
         update_post_meta($post_id, 'currency', $currency);
         update_post_meta($post_id, 'unitPrice', $unitPrice);
+        update_post_meta($post_id, 'com', $com);
         update_post_meta($post_id, 'area', $area);
         update_post_meta($post_id, 'vi_tri', $vi_tri);
         update_post_meta($post_id, 'direction', $direction);
@@ -65,10 +89,31 @@ if (isset($_POST['bntSave'])) {
         update_post_meta($post_id, 'so_tang', $so_tang);
         update_post_meta($post_id, 'so_phong', $so_phong);
         update_post_meta($post_id, 'toilet', $toilet);
+        update_post_meta($post_id, 'project', $project);
+        update_post_meta($post_id, 'video', $post_video);
+        update_post_meta($post_id, 'maps', $post_maps);
+        update_post_meta($post_id, 'object_poster', $object_poster);
+        update_post_meta($post_id, 'product_permission', $product_permission);
+        update_post_meta($post_id, 'not_in_vip', $tin_vip);
+        update_post_meta($post_id, 'start_time', $start_time);
         update_post_meta($post_id, 'end_time', $end_time);
         update_post_meta($post_id, 'contact_name', $contact_name);
         update_post_meta($post_id, 'contact_tel', $contact_tel);
         update_post_meta($post_id, 'contact_email', $contact_email);
+        
+        // upload images
+        $gallery_ids = array();
+        for ($i = 0; $i < count($_FILES['images']['name']); $i++) {
+            $filename = $_FILES['images']['name'][$i];
+            $file = file_get_contents($_FILES['images']['tmp_name'][$i]);
+            $res = wp_upload_bits($filename, '', $file);
+            $attach_id = insert_attachment($res['file'], $post_id);
+            $gallery_ids[] = $attach_id;
+        }
+        if(!empty($gallery_ids)){
+            set_post_thumbnail($post_id, $gallery_ids[0]);
+            update_field('gallery', $gallery_ids, $post_id);
+        }
     } else {
         $contact_page = get_page_link(get_option(SHORT_NAME . "_pagecontact"));
         $notify1 = 'Có lỗi xảy ra, bạn hãy thử lại hoặc <a href="'.$contact_page.'" target="_blank">liên hệ</a> với chúng tôi để được trợ giúp.';
@@ -90,7 +135,7 @@ get_header();
         <div class="banner_logo mt10 mb10">
             <?php get_template_part('template', 'logo_banner'); ?>
         </div>
-        <form name="formPost" id="formPost" method="post" action="">
+        <form name="formPost" id="formPost" method="post" action="" enctype="multipart/form-data">
             <div class="formsale postnews">
                 <?php //the_content();?>
                 <?php if (!empty($notify)): ?>
@@ -112,7 +157,7 @@ get_header();
                     <div class="thongtin-content postnews-content">
                         <div class="item row">
                             <div class="col-sm-2">
-                                <label class="text">Loại tin</label>
+                                <label class="text">Loại tin <span>(*)</span></label>
                             </div>
                             <div class="col-sm-4">
                                 <?php
@@ -129,31 +174,334 @@ get_header();
                         </div>
                         <div class="item row">
                             <div class="col-sm-2">
-                                <label class="text">Loại nhà đất <span>(*)</span></label>
+                                <label class="text">Lịch đăng <span>(*)</span></label>
                             </div>
-                            <div class="col-sm-3">
-                                <select name="category" id="category" class="required select" required>
-                                    <?php
-                                    $term_id = 0;
-                                    if(!empty($categories)){
-                                        $term_id = $categories[0]->term_id;
-                                    }
-                                    $categories = get_categories(array(
-                                        'hide_empty' => 0,
-                                        'post_type' => 'product',
-                                        'taxonomy' => 'product_category',
-                                        'parent' => $term_id,
-                                    ));
-                                    foreach ($categories as $category) :
-                                        echo "<option value=\"{$category->term_id}\">{$category->name}</option>";
-                                    endforeach;
-                                    ?>
+                            <div class="col-sm-2">
+                                <select name="not_in_vip" class="select" required>
+                                    <option value="0">Tin thường</option>
+                                    <option value="1">Tin VIP</option>
                                 </select>
                             </div>
-                            <div class="clear"></div>
+                            <div class="col-sm-8">
+                                <div class="row">
+                                    <?php
+                                    $start_time = date('d/m/Y');
+                                    $end_time = date('d/m/Y', strtotime('+30 days'));
+                                    ?>
+                                    <div class="col-sm-6">
+                                        <div class="row">
+                                            <div class="col-sm-6 pdt5">
+                                                <label class="text" for="start_time">Bắt đầu <span>(*)</span></label>
+                                            </div>
+                                            <div class="col-sm-6 date">
+                                                <input type="text" value="<?php echo $start_time ?>" placeholder="<?php echo $start_time ?>" name="start_time" id="start_time" class="textbox" maxlength="10" required /> <i class="fa fa-calendar"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="row">
+                                            <div class="col-sm-6 pdt5">
+                                                <label class="text" for="end_time">Kết thúc <span>(*)</span></label>
+                                            </div>
+                                            <div class="col-sm-6 date">
+                                                <input type="text" value="<?php echo $end_time ?>" placeholder="<?php echo $end_time ?>" name="end_time" id="end_time" class="textbox" maxlength="10" required /> <i class="fa fa-calendar"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div class="item row">
                             <div class="col-sm-2">
+                                <label class="text">Giá <span>(*)</span></label>
+                            </div>
+                            <div class="col-sm-2">
+                                <input type="text" value="0" name="price" min="0" id="price" class="number textbox" required/>
+                            </div>
+                            <div class="col-sm-4">
+                                <div class="row">
+                                    <div class="col-sm-6 pdt5">
+                                        <label class="text">Đơn vị tính <span>(*)</span></label>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <select name="currency" id="currency" class="select" required>
+                                            <?php
+                                            foreach ($unitcurrencies as $key => $value) {
+                                                echo '<option value="' . $key . '">' . $value . '</option>';
+                                            }
+                                            ?>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-4">
+                                <div class="row">
+                                    <div class="col-sm-6 pdt5">
+                                        <label class="text">Giá tính <span>(*)</span></label>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <select name="unitPrice" id="unitPrice" class="select" required>
+                                            <?php
+                                            foreach ($unitPrices as $key => $value) {
+                                                echo '<option value="' . $key . '">' . $value . '</option>';
+                                            }
+                                            ?>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="item row">
+                            <div class="col-sm-4">
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <label class="text">Đối tượng đăng <span>(*)</span></label> 
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <select name="object_poster" class="select" required>
+                                            <option value="">Chọn đối tượng</option>
+                                            <?php
+                                            foreach (get_object_posters() as $key => $value) {
+                                                echo '<option value="' . $key . '">' . $value . '</option>';
+                                            }
+                                            ?>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-8">
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <div class="row">
+                                            <div class="col-sm-6 pdt5">
+                                                <label class="text">Quyền hạn BĐS <span>(*)</span></label> 
+                                            </div>
+                                            <div class="col-sm-6">
+                                                <select name="product_permission" class="select" required>
+                                                    <option value="">Chọn quyền hạn đối với Bất động sản</option>
+                                                    <?php
+                                                    foreach (get_product_permissions() as $key => $value) {
+                                                        echo '<option value="' . $key . '">' . $value . '</option>';
+                                                    }
+                                                    ?>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="row">
+                                            <div class="col-sm-6 pdt5">
+                                                <label class="text">Hoa hồng</label> 
+                                            </div>
+                                            <div class="col-sm-6">
+                                                <input type="text" placeholder="Tính theo %" name="com" class="textbox" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div><!-- end .thongtincoban-->
+                <div class="motachitiet">
+                    <h1 class="title_postnews">Thông tin chi tiết</h1>
+                    <div class="mota-content postnews-content">
+                        <div class="item row">
+                            <div class="col-md-2 col-sm-3">
+                                <label class="text">Tiêu đề tin <span>(*)</span></label> 
+                            </div>
+                            <div class="col-md-10 col-sm-9">
+                                <input name="post_title" type="text" maxlength="70" value="" placeholder="Vui lòng gõ tiếng Việt có dấu để tin đăng được kiểm duyệt nhanh hơn" id="contact_name" class="form-control" required/>
+                            </div>
+                        </div>
+                        <div class="item row">
+                            <div class="col-md-2 col-sm-3">
+                                <label class="text">Nội dung tin <span>(*)</span></label> 
+                            </div>
+                            <div class="col-md-10 col-sm-9">
+                                <?php
+                                wp_editor("", "post_content", array(
+                                    'textarea_name' => "post_content",
+                                    'textarea_rows' => 12,
+                                    'media_buttons' => false,
+                                    'teeny' => true,
+                                    'quicktags' => false,
+                                ));
+                                ?>
+                            </div>
+                        </div>
+                        <div class="item row">
+                            <div class="col-sm-2">
+                                <label class="text">Video</label>
+                            </div>
+                            <div class="col-sm-10">
+                                <textarea rows="3" name="post_video" class="form-control"></textarea>
+                                <small>Mã nhúng iframe video Youtube hoặc Vimeo. Width: 100% x Height: 400</small>
+                            </div>
+                        </div>
+                        <div class="item row">
+                            <div class="col-sm-2">
+                                <label class="text">Hình ảnh</label>
+                            </div>
+                            <div class="col-sm-10">
+                                <div class="product-images mb5">
+                                    <input type="file" name="images[]" accept="image/jpg,image/jpeg,image/x-png,image/gif" multiple />
+                                </div>
+                                <small>Tối đa 08 ảnh. Dung lượng mỗi ảnh không quá 1MB. Chấp nhận các định dạng: jpg, jpeg, png, gif.</small>
+                            </div>
+                        </div>
+                    </div>
+                </div><!-- end .motachitiet-->
+                <div class="thongtinkhac">
+                    <h1 class="title_postnews">Thông số Bất động sản</h1>
+                    <div class="thongtinkhac-content postnews-content">
+                        <div class="item row">
+                            <div class="col-sm-4 mb15">
+                                <div class="row">
+                                    <div class="col-sm-5 pdr0">
+                                        <label class="text">Loại BĐS <span>(*)</span></label>
+                                    </div>
+                                    <div class="col-sm-7">
+                                        <select name="category" id="category" class="required select" required>
+                                            <?php
+                                            $term_id = 0;
+                                            if(!empty($categories)){
+                                                $term_id = $categories[0]->term_id;
+                                            }
+                                            $categories = get_categories(array(
+                                                'hide_empty' => 0,
+                                                'post_type' => 'product',
+                                                'taxonomy' => 'product_category',
+                                                'parent' => $term_id,
+                                            ));
+                                            foreach ($categories as $category) :
+                                                echo "<option value=\"{$category->term_id}\">{$category->name}</option>";
+                                            endforeach;
+                                            ?>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-4 mb15">
+                                <div class="row">
+                                    <div class="col-sm-5 pdr0">
+                                        <label class="text">Dự án</label>
+                                    </div>
+                                    <div class="col-sm-7">
+                                        <select name="project" id="project" class="select">
+                                            <option value="">- Chọn dự án -</option>
+                                            <?php
+                                            $projects = new WP_Query(array(
+                                                'post_type' => 'project',
+                                                'showposts' => -1,
+                                                'post_status' => 'publish',
+                                            ));
+                                            while($projects->have_posts()): $projects->the_post();
+                                                echo "<option value=\"".get_the_ID()."\">".get_the_title()."</option>";
+                                            endwhile;
+                                            wp_reset_query();
+                                            ?>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-4 mb15">
+                                <div class="row">
+                                    <div class="col-sm-5 pdr0">
+                                        <label class="text">Diện tích (m<sup>2</sup>)</label>
+                                    </div>
+                                    <div class="col-sm-7">
+                                        <input type="text" value="" name="area" id="area" class="number textbox" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-4 mb15">
+                                <div class="row">
+                                    <div class="col-sm-5 pdr0">
+                                        <label class="text">Mặt tiền (m)</label>
+                                    </div>
+                                    <div class="col-sm-7">
+                                        <input type="text" value="" name="mat_tien" id="mat_tien" class="number textbox" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-4 mb15">
+                                <div class="row">
+                                    <div class="col-sm-5 pdr0">
+                                        <label class="text">Đường vào (m)</label>
+                                    </div>
+                                    <div class="col-sm-7">
+                                        <input type="text" value="" name="duong_truoc_nha" id="duong_truoc_nha" class="number textbox" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-4 mb15">
+                                <div class="row">
+                                    <div class="col-sm-5 pdr0">
+                                        <label class="text">Hướng BĐS</label>
+                                    </div>
+                                    <div class="col-sm-7">
+                                        <select name="direction" id="direction" class="select">
+                                            <?php
+                                            foreach ($directions as $key => $value) {
+                                                echo '<option value="' . $key . '">' . $value . '</option>';
+                                            }
+                                            ?>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-4 mb15">
+                                <div class="row">
+                                    <div class="col-sm-5 pdr0">
+                                        <label class="text">Số tầng</label>
+                                    </div>
+                                    <div class="col-sm-7">
+                                        <input type="text" value="" name="so_tang" id="so_tang" class="number textbox" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-4 mb15">
+                                <div class="row">
+                                    <div class="col-sm-5 pdr0">
+                                        <label class="text">Phòng ngủ</label>
+                                    </div>
+                                    <div class="col-sm-7">
+                                        <select name="so_phong" id="so_phong" class="number select">
+                                            <?php
+                                            $rooms = room_list();
+                                            foreach ($rooms as $key => $value) {
+                                                echo '<option value="' . $key . '">' . $value . '</option>';
+                                            }
+                                            ?>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-4 mb15">
+                                <div class="row">
+                                    <div class="col-sm-5 pdr0">
+                                        <label class="text">Phòng vệ sinh</label>
+                                    </div>
+                                    <div class="col-sm-7">
+                                        <select name="toilet" id="toilet" class="number select">
+                                            <?php
+                                            foreach (range(1, 9) as $key => $value) {
+                                                echo '<option value="' . $key . '">' . $value . '</option>';
+                                            }
+                                            ?>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div><!-- .end thongtinkhac -->
+                <div class="thongtincoban mt20">
+                    <h1 class="title_postnews">Địa chỉ Bất động sản</h1>
+                    <div class="thongtin-content postnews-content">
+                        <div class="item row">
+                            <div class="col-sm-2 pdr0">
                                 <label class="text">Vị trí <span>(*)</span></label>
                             </div>
                             <div class="col-sm-2">
@@ -181,184 +529,64 @@ get_header();
                                 <input type="text" value="" name="street" id="street" class="textbox" placeholder="Đường phố" />
                             </div>
                         </div>
-                        <div class="item row"> 
-                            <div class="col-sm-2">
-                                <label class="text">Giá <span>(*)</span></label>
-                            </div>
-                            <div class="col-sm-2">
-                                <input type="text" value="0" name="price" min="0" id="price" class="number textbox" required/>
-                            </div>
-                            <div class="col-sm-2">
-                                <select name="currency" id="currency" class="select" required>
-                                    <?php
-                                    foreach ($unitcurrencies as $key => $value) {
-                                        echo '<option value="' . $key . '">' . $value . '</option>';
-                                    }
-                                    ?>
-                                </select>
-                            </div>
-                            <div class="col-sm-2">
-                                <select name="unitPrice" id="unitPrice" class="select" required>
-                                    <?php
-                                    foreach ($unitPrices as $key => $value) {
-                                        echo '<option value="' . $key . '">' . $value . '</option>';
-                                    }
-                                    ?>
-                                </select>
-                            </div>
-                            <div class="col-sm-4">
-                                <label class="text">Diện tích</label>
-                                <input type="text" value="" name="area" id="area" class="number textbox" style="width: 60%"/> m2
-                            </div>
-                        </div>
                         <div class="item row">
                             <div class="col-sm-2">
-                                <label class="text">Địa điểm <span>(*)</span></label> 
+                                <label class="text">Địa chỉ <span>(*)</span></label> 
                             </div>
                             <div class="col-sm-10">
                                 <input type="text" value="" name="vi_tri" id="vi_tri" class="textbox required" required/>
                             </div>
                         </div>
-                    </div>
-                </div><!-- end .thongtincoban-->
-                <div class="thongtinkhac">
-                    <h1 class="title_postnews">Thông tin khác</h1>
-                    <div class="thongtinkhac-content postnews-content">
-                        <div class="item row">
-                            <div class="col-sm-3">
-                                <div class="row">
-                                    <label class="text col-lg-4">Mặt tiền</label>
-                                    <div class="col-lg-8">
-                                        <input type="text" value="" name="mat_tien" id="mat_tien" class="number textbox" style="width: 70%" /> m
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-sm-6">
-                                <div class="row">
-                                    <label class="text col-lg-4">Đường trước nhà</label>
-                                    <div class="col-lg-8">
-                                        <input type="text" value="" name="duong_truoc_nha" id="duong_truoc_nha" class="textbox" style="width: 100%" />
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-sm-3">
-                                <div class="row">
-                                    <label class="text col-lg-4">Hướng BĐS</label>
-                                    <div class="col-lg-8">
-                                        <select name="direction" id="direction" class="select">
-                                            <?php
-                                            foreach ($directions as $key => $value) {
-                                                echo '<option value="' . $key . '">' . $value . '</option>';
-                                            }
-                                            ?>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="item row">
-                            <div class="col-sm-3">
-                                <div class="row">
-                                    <label class="text col-lg-4">Số tầng</label>
-                                    <div class="col-lg-8">
-                                        <input type="text" value="" name="so_tang" id="so_tang" class="number textbox" />
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-sm-6">
-                                <div class="row">
-                                    <label class="text col-lg-4">Số phòng</label>
-                                    <div class="col-lg-8">
-                                        <select name="so_phong" id="so_phong" class="select">
-                                            <?php
-                                            $rooms = room_list();
-                                            foreach ($rooms as $key => $value) {
-                                                echo '<option value="' . $key . '">' . $value . '</option>';
-                                            }
-                                            ?>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-sm-3">
-                                <div class="row">
-                                    <label class="text col-lg-4">Số toilet</label>
-                                    <div class="col-lg-8">
-                                        <select name="toilet" id="toilet" class="number select">
-                                            <?php
-                                            foreach (range(1, 9) as $key => $value) {
-                                                echo '<option value="' . $key . '">' . $value . '</option>';
-                                            }
-                                            ?>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="item row">
+                        <div class="item row mb0">
                             <div class="col-sm-2">
-                                <label class="text">BĐS Phù hợp</label>
+                                <label class="text">Google Maps</label>
                             </div>
                             <div class="col-sm-10">
-                                <ul class="list-pu">
-                                    <?php
-                                    $purposes = get_categories(array(
-                                        'type' => 'product',
-                                        'taxonomy' => 'product_purpose',
-                                    ));
-                                    foreach ($purposes as $purpose) :
-                                        ?>
-                                        <li>
-                                            <input type="checkbox" name="purpose_cat[]" id="purpose_cat" value="<?php echo $purpose->term_id; ?>" />&nbsp;<?php echo $purpose->name; ?>
-                                        </li>
-                                    <?php endforeach; ?>           
-                                </ul>
+                                <textarea rows="5" name="post_maps" class="form-control"></textarea>
+                                <small>Mã nhúng iframe bản đồ Google Maps. Width: 100%</small>
                             </div>
                             <div class="clear"></div>
                         </div>
                     </div>
-                </div><!-- .end thongtinkhac -->
-                <div class="motachitiet">
-                    <h1 class="title_postnews">Mô tả chi tiết</h1>
-                    <div class="mota-content postnews-content">
-                        <div class="item row">
-                            <div class="col-md-2 col-sm-3">
-                                <label class="text">Tiêu đề <span>(*)</span></label> 
-                            </div>
-                            <div class="col-md-10 col-sm-9">
-                                <input name="post_title" type="text" maxlength="70" value="" placeholder="Vui lòng gõ tiếng Việt có dấu để tin đăng được kiểm duyệt nhanh hơn" minlength="5" maxlength="150" id="contact_name" class="form-control" required/>
-                            </div>
-                        </div>
-                        <div class="item row">
-                            <div class="col-md-2 col-sm-3">
-                                <label class="text">Nội dung mô tả <span>(*)</span></label> 
-                            </div>
-                            <div class="col-md-10 col-sm-9">
-                                <!--<textarea rows="5" name="post_content" minlength="100" maxlength="3000" id="post_content" cols="60" class="form-control" required></textarea>-->
-                                <?php
-                                wp_editor("", "post_content", array(
-                                    'textarea_name' => "post_content",
-                                    'textarea_rows' => 12,
-                                    'media_buttons' => false,
-                                    'teeny' => true,
-                                    'quicktags' => false,
-                                ));
+                </div>
+                <div class="thongtinkhac">
+                    <h1 class="title_postnews">Bất động sản Phù hợp để</h1>
+                    <div class="thongtinkhac-content postnews-content">
+                        <ul class="list-pu">
+                            <?php
+                            $purposes = get_categories(array(
+                                'type' => 'product',
+                                'taxonomy' => 'product_purpose',
+                                'hide_empty' => 0,
+                            ));
+                            foreach ($purposes as $purpose) :
                                 ?>
-                                <small>Hình ảnh hãy upload lên <a href="https://drive.google.com/" rel="nofollow" target="_blank">Google Drive</a> của bạn, 
-                                    rồi để link download vào cuối bài viết. Ban biên tập của chúng tôi sẽ đưa vào bài viết khi phê duyệt.</small>
-                            </div>
-                        </div>
-                        <div class="item row">
-                            <div class="col-md-2 col-sm-3">
-                                <label class="text">Thời gian đăng <span>(*)</span></label>
-                            </div>
-                            <div class="col-md-4 col-sm-4">
-                                <?php $end_time = date('d/m/Y', strtotime('+30 days')); ?>
-                                <input type="text" value="<?php echo $end_time ?>" name="end_time" id="end_time" class="textbox" required> <i class="fa fa-calendar"></i>
-                            </div>
-                        </div>
+                                <li>
+                                    <input type="checkbox" name="purpose_cat[]" id="purpose_cat" value="<?php echo $purpose->term_id; ?>" />&nbsp;<?php echo $purpose->name; ?>
+                                </li>
+                            <?php endforeach; ?>           
+                        </ul>
                     </div>
-                </div><!-- end .motachitiet-->
+                </div>
+                <div class="thongtinkhac">
+                    <h1 class="title_postnews">Đặc điểm Bất động sản</h1>
+                    <div class="thongtinkhac-content postnews-content">
+                        <ul class="list-pu">
+                            <?php
+                            $specials = get_categories(array(
+                                'type' => 'product',
+                                'taxonomy' => 'product_special',
+                                'hide_empty' => 0,
+                            ));
+                            foreach ($specials as $special) :
+                                ?>
+                                <li>
+                                    <input type="checkbox" name="special_cat[]" id="special_cat" value="<?php echo $special->term_id; ?>" />&nbsp;<?php echo $special->name; ?>
+                                </li>
+                            <?php endforeach; ?>           
+                        </ul>
+                    </div>
+                </div>
                 <div class="thongtinlienhe">
                     <h1 class="title_postnews">Thông tin liên hệ</h1>
                     <div class="thongtinlienhe-content postnews-content">

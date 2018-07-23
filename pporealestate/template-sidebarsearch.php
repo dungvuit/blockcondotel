@@ -38,6 +38,10 @@ $purposes = get_categories(array(
     'type' => 'product',
     'taxonomy' => 'product_purpose',
 ));
+$specials = get_categories(array(
+    'type' => 'product',
+    'taxonomy' => 'product_special',
+));
 ?>
 <div class="hide hidden" id="categories-sales">
     <option value="<?php echo get_option(SHORT_NAME . "_cat_sell") ?>">- Loại nhà đất -</option>
@@ -186,15 +190,15 @@ $purposes = get_categories(array(
                         </select>
                     </li>
                     <li>
-                        <select name="purpose" id="purpose" >
-                            <option value="">- Mục đích -</option>
+                        <select name="special" id="special" >
+                            <option value="">- Đặc điểm -</option>
                             <?php
-                            $purposeID = intval(getRequest('purpose'));
-                            foreach ($purposes as $purpose) :
-                                if ($purposeID == $purpose->term_id) {
-                                    echo "<option value=\"{$purpose->term_id}\" selected>{$purpose->name}</option>";
+                            $specialID = intval(getRequest('special'));
+                            foreach ($specials as $special) :
+                                if ($specialID == $special->term_id) {
+                                    echo "<option value=\"{$special->term_id}\" selected>{$special->name}</option>";
                                 } else {
-                                    echo "<option value=\"{$purpose->term_id}\">{$purpose->name}</option>";
+                                    echo "<option value=\"{$special->term_id}\">{$special->name}</option>";
                                 }
                             endforeach;
                             ?>

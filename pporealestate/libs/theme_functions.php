@@ -159,7 +159,6 @@ HTML;
 /* ---------------------------------------------------------------------------- */
 # Add Zopim Live chat
 /* ---------------------------------------------------------------------------- */
-
 function add_zopim_livechat() {
     $zopimKey = get_option(SHORT_NAME . '_zopimKey');
     if (!empty($zopimKey)):
@@ -177,10 +176,37 @@ HTML;
     endif;
 }
 
+/* ---------------------------------------------------------------------------- */
+# Add Tawk chat
+/* ---------------------------------------------------------------------------- */
+function add_tawk_livechat() {
+    $tawkSiteID = get_option(SHORT_NAME . '_tawkSiteID');
+    if (!empty($tawkSiteID)):
+        echo <<<HTML
+<!--Start of Tawk.to Script-->
+<script type="text/javascript">
+var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+(function(){
+var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
+s1.async=true;
+s1.src='https://embed.tawk.to/{$tawkSiteID}/default';
+s1.charset='UTF-8';
+s1.setAttribute('crossorigin','*');
+s0.parentNode.insertBefore(s1,s0);
+})();
+</script>
+<!--End of Tawk.to Script-->
+HTML;
+    endif;
+}
+
 if(!wp_is_mobile() and ((!isset($_SERVER['HTTP_USER_AGENT']) || stripos($_SERVER['HTTP_USER_AGENT'], 'Speed Insights') === false)) ){
     add_action('wp_footer', 'add_subiz_livechat');
     add_action('wp_footer', 'add_subiz_livechat_v4');
     add_action('wp_footer', 'add_zopim_livechat');
+}
+if( !isset($_SERVER['HTTP_USER_AGENT']) || stripos($_SERVER['HTTP_USER_AGENT'], 'Speed Insights') === false ){
+    add_action('wp_footer', 'add_tawk_livechat');
 }
 
 /* ----------------------------------------------------------------------------------- */
@@ -484,6 +510,41 @@ function ppo_feed_request($qv) {
 }
 
 add_filter('request', 'ppo_feed_request');
+
+/**
+ * Insert attachment
+ */
+function insert_attachment($file, $id = 0) {
+    // Get the path to the upload directory
+    $dirs = wp_upload_dir();
+    
+    // Check the type of file. We'll use this as the 'post_mime_type'
+    $filetype = wp_check_filetype($file);
+    
+    // Prepare an array of post data for the attachment
+    $attachment = array(
+        'guid' => $dirs['url'] . '/' . basename($file),
+        'post_mime_type' => $filetype['type'],
+        'post_title' => preg_replace('/\.[^.]+$/', '', basename($file)),
+        'post_content' => '',
+        'post_status' => 'inherit'
+    );
+    
+    // Insert the attachment
+    if($id > 0){
+        $attach_id = wp_insert_attachment($attachment, $file, $id);
+    } else {
+        $attach_id = wp_insert_attachment($attachment, $file);
+    }
+    
+    // Make sure that this file is included, as wp_generate_attachment_metadata() depends on it
+    require_once( ABSPATH . 'wp-admin/includes/image.php' );
+    
+    // Generate the metadata for the attachment, and update the database record
+    $attach_data = wp_generate_attachment_metadata($attach_id, $file);
+    wp_update_attachment_metadata($attach_id, $attach_data);
+    return $attach_id;
+}
 
 /**
  * Get Province list
