@@ -1,0 +1,1 @@
+<?php if ( is_active_sidebar( 'sidebar_user' ) ) { dynamic_sidebar( 'sidebar_user' ); } ?>

@@ -1,0 +1,1 @@
+<img alt="<?php bloginfo('sitename'); ?>" src="<?php echo get_option('logo_banner');?>"/>

@@ -1,0 +1,60 @@
+.grid-posts-widget .entry{
+    background: #fff;
+    margin-bottom: 30px;
+    padding: 15px
+}
+.grid-posts-widget .entry .thumbnail, .list-posts-widget .entry .thumbnail, .list_without_thumb-posts-widget .entry .thumbnail{
+    margin-bottom: 0;
+    border-radius: 0;
+    padding: 0
+}
+.grid-posts-widget .entry .thumbnail img, .list-posts-widget .entry .thumbnail img, .list_without_thumb-posts-widget .entry .thumbnail img{
+    width: 100%
+}
+.grid-posts-widget .entry .entry-meta{
+    margin: 15px 0;
+    font-size: 13px
+}
+.grid-posts-widget .entry .entry-title{
+    font-size: 14px;
+    margin-bottom: 0;
+    line-height: 1.4;
+    min-height: 38px
+}
+.grid-posts-widget .entry.first .entry-title, .list-posts-widget .entry.first .entry-title, 
+.list_without_thumb-posts-widget .entry.first .entry-title{
+    min-height: inherit;
+    font-size: 18px
+}
+
+.list-posts-widget .entry{
+    margin-bottom: 10px
+}
+.list-posts-widget .entry.first, .list_without_thumb-posts-widget .entry.first{
+    margin-bottom: 30px
+}
+.list-posts-widget .entry.first .thumbnail, .list_without_thumb-posts-widget .entry.first .thumbnail{
+    margin-bottom: 15px
+}
+.list-posts-widget .entry .entry-title, .list_without_thumb-posts-widget .entry .entry-title{
+    font-size: 14px;
+    margin-bottom: 10px;
+    line-height: 1.4;
+}
+.list-posts-widget .entry .entry-meta, .list_without_thumb-posts-widget .entry .entry-meta{
+    font-style: italic;
+    font-size: 13px
+}
+
+
+
+@media(max-width: 767px){
+    .grid-posts-widget .entry.first .entry-title{
+        font-size: 14px;
+        margin-top: 15px
+    }
+    .list-posts-widget .entry .thumbnail{margin-bottom: 15px}
+}
+@media(max-width: 425px){
+    .grid-posts-widget .col-xs-6{width: 100%}
+}

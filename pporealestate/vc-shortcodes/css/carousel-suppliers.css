@@ -1,0 +1,55 @@
+.carousel-suppliers-widget{margin-bottom: 30px}
+.carousel-suppliers-widget .widget-title{
+    border-left: 5px solid #6a86b6;
+    color: #fff;
+    text-transform: uppercase;
+    padding-left: 10px;
+    font-family: "Roboto Condensed";
+    margin: 0 0 15px;
+    font-weight: bold
+}
+.carousel-suppliers-widget .owl-carousel .owl-stage-outer{padding-bottom: 5px}
+.supplier_list .entry {margin-bottom: 30px}
+.carousel-suppliers-widget .entry, .supplier_list .entry {
+    background: #fff;
+    border: 1px solid #ddd;
+    -webkit-box-shadow: 0px 2px 10px -5px rgba(0,0,0,0.5);
+    -moz-box-shadow: 0px 2px 10px -5px rgba(0,0,0,0.5);
+    box-shadow: 0px 2px 10px -5px rgba(0,0,0,0.5)
+}
+.carousel-suppliers-widget .entry:hover, .supplier_list .entry:hover{
+    -webkit-box-shadow: 0px 0px 15px -3px rgba(0,0,0,0.5);
+    -moz-box-shadow: 0px 0px 15px -3px rgba(0,0,0,0.5);
+    box-shadow: 0px 0px 15px -3px rgba(0,0,0,0.5)
+}
+.carousel-suppliers-widget .entry .thumbnail, .supplier_list .entry .thumbnail{
+    border: none;
+    border-bottom: 1px solid #ddd;
+    border-radius: 0;
+    margin-bottom: 0
+}
+.carousel-suppliers-widget .entry .entry-title, .supplier_list .entry .entry-title{
+    color: #39305f;
+    padding: 10px;
+    margin-bottom: 0;
+    font-size: 16px;
+    text-align: center;
+    min-height: 58px
+}
+.carousel-suppliers-widget .entry .entry-title a, .supplier_list .entry .entry-title a{color: #39305f}
+.carousel-suppliers-widget .entry .entry-title a:hover, .supplier_list .entry .entry-title a:hover{color: #6a86b6}
+.carousel-suppliers-widget .owl-controls .owl-nav{
+    position: absolute;
+    top: -46px;
+    right: 0
+}
+.carousel-suppliers-widget .owl-controls .owl-prev, .carousel-suppliers-widget .owl-controls .owl-next{
+    color: #fff;
+    float: left;
+    width: 22px;
+    height: 32px;
+    line-height: 32px;
+    font-size: 32px;
+    text-align: center
+}
+.carousel-suppliers-widget .owl-controls .owl-next{text-align: right}

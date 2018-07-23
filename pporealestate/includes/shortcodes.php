@@ -1,0 +1,1 @@
+<?phpinclude_once THEME_DIR . '/includes/shortcodes/recent_feedback_carousel.php';include_once THEME_DIR . '/includes/shortcodes/partner_carousel.php';add_shortcode('recent_feedback_carousel', 'shortcode_recent_feedback_carousel');add_shortcode('partner_carousel', 'shortcode_partner_carousel');
