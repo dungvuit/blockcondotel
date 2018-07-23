@@ -365,4 +365,50 @@ jQuery(document).ready(function ($) {
     }
     
     jQuery(".own-avatar").append('<span class="toolbox"><a class="hotline" href="tel:' + hotline + '"></a><a class="website" href="' + website + '"></a></span>');
+    
+    // Dang tin
+    jQuery('form#formPost input[type="file"]').change(function(){
+        toastr.options.closeButton = true;
+        toastr.options.positionClass = "toast-top-center";
+        var _file = jQuery(this).get(0);
+        if(_file.files.length > 8) {
+            toastr.error("Số lượng tối đa là 08 ảnh!", '', {timeOut: 5000});
+        } else {
+            var valid_size = true;
+            for(i = 0; i < _file.files.length; i++){
+                if((_file.files[i].size / 1024) / 1024 > 1){
+                    valid_size = false;
+                }
+            }
+            if(!valid_size){
+                toastr.error("Dung lượng mỗi ảnh không được quá 1MB", '', {timeOut: 5000});
+            }
+        }
+    });
+    jQuery('form#formPost #start_time, form#formPost #end_time').change(function(){
+        jQuery(this).val(function(index, value) {
+            return value.replace(/\s/g, "").replace(/[-]/g, "/");
+        });
+    });
+    jQuery('form#formPost').submit(function(){
+        toastr.options.closeButton = true;
+        toastr.options.positionClass = "toast-top-center";
+        var _file = jQuery('form#formPost input[type="file"]').get(0);
+        if(_file.files.length > 8) {
+            toastr.error("Số lượng tối đa là 08 ảnh!", '', {timeOut: 5000});
+        } else {
+            var valid_size = true;
+            for(i = 0; i < _file.files.length; i++){
+                if((_file.files[i].size / 1024) / 1024 > 1){
+                    valid_size = false;
+                }
+            }
+            if(!valid_size){
+                toastr.error("Dung lượng mỗi ảnh không được quá 1MB", '', {timeOut: 5000});
+            } else {
+                return true;
+            }
+        }
+        return false;
+    });
 });

@@ -2,13 +2,20 @@
 $args = array(
     'post_type' => 'product',
     'meta_query' => array(
+        'relation' => 'AND',
         array(
             'key' => 'not_in_vip',
             'value' => '1',
             'compare' => '='
         ),
+        array(
+            'key' => 'end_time',
+            'value' => date('Y/m/d', strtotime("today")),
+            'compare' => '>=',
+            'type' => 'DATE'
+        )
     ),
-    'posts_per_page' => -1
+    'posts_per_page' => -1,
 );
 $query = new WP_Query($args);
 ?>

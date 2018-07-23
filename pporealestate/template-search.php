@@ -40,6 +40,10 @@ $areas = get_categories(array(
     'type' => 'product',
     'taxonomy' => 'product_acreage',
 ));
+$specials = get_categories(array(
+    'type' => 'product',
+    'taxonomy' => 'product_special',
+));
 ?>
 <h2 class="form-title">Tìm bất động sản</h2>
 <ul class="nav nav-tabs responsive" id="myTab">
@@ -175,15 +179,15 @@ $areas = get_categories(array(
                             </select>
                         </li>
                         <li>
-                            <select name="purpose" id="purpose" >
-                                <option value="">- Mục đích -</option>
+                            <select name="special" id="special" >
+                                <option value="">- Đặc điểm -</option>
                                 <?php
-                                $purposeID = intval(getRequest('purpose'));
-                                foreach ($purposes as $purpose) :
-                                    if ($purposeID == $purpose->term_id) {
-                                        echo "<option value=\"{$purpose->term_id}\" selected>{$purpose->name}</option>";
+                                $specialID = intval(getRequest('special'));
+                                foreach ($specials as $special) :
+                                    if ($specialID == $special->term_id) {
+                                        echo "<option value=\"{$special->term_id}\" selected>{$special->name}</option>";
                                     } else {
-                                        echo "<option value=\"{$purpose->term_id}\">{$purpose->name}</option>";
+                                        echo "<option value=\"{$special->term_id}\">{$special->name}</option>";
                                     }
                                 endforeach;
                                 ?>

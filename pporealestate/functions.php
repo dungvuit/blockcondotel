@@ -246,6 +246,7 @@ function ppo_enqueue_scripts() {
 //    wp_enqueue_style( SHORT_NAME . '-jquery-ui', '//code.jquery.com/ui/1.11.1/themes/start/jquery-ui.css', array(), '1.11.1' );
     wp_enqueue_style( SHORT_NAME . '-wp-default', get_template_directory_uri() . '/assets/css/wp-default.css', array(), THEME_VER );
     wp_enqueue_style( SHORT_NAME . '-owl-carousel', get_template_directory_uri() . '/assets/css/owl.carousel.min.css', array(), THEME_VER );
+    wp_enqueue_style( SHORT_NAME . '-toastr', get_template_directory_uri() . '/assets/css/toastr.min.css', array(), '2.1.3' );
     wp_enqueue_style( SHORT_NAME . '-common', get_template_directory_uri() . '/assets/css/common.css', array(), THEME_VER );
 
     // Visual Composer element stylesheet
@@ -294,6 +295,7 @@ function ppo_enqueue_scripts() {
     wp_enqueue_script( SHORT_NAME . '-simplesidebar', get_template_directory_uri() . '/assets/js/jquery.simplesidebar.js', array( ), THEME_VER, true );
     wp_enqueue_script( SHORT_NAME . '-scrolltofixed', get_template_directory_uri() . '/assets/js/jquery-scrolltofixed-min.js', array( ), THEME_VER, true );
     wp_enqueue_script( SHORT_NAME . '-owl-carousel', get_template_directory_uri() . '/assets/js/owl.carousel.min.js', array( ), THEME_VER, true );
+    wp_enqueue_script( SHORT_NAME . '-toastr', get_template_directory_uri() . '/assets/js/toastr.min.js', array( ), '2.1.3', true );
     wp_enqueue_script( SHORT_NAME . '-custom', get_template_directory_uri() . '/assets/js/custom.js', array( ), THEME_VER, true );
     wp_enqueue_script( SHORT_NAME . '-ajax', get_template_directory_uri() . '/assets/js/ajax.min.js', array( ), THEME_VER, true );
     wp_enqueue_script( SHORT_NAME . '-app', get_template_directory_uri() . '/assets/js/app.min.js', array( ), THEME_VER, true );
@@ -471,6 +473,30 @@ add_action('admin_print_footer_scripts', 'admin_add_custom_js', 99);
 add_action('pre_get_posts', 'custom_search_filter');
 
 function custom_search_filter($query) {
+    // where in backend
+    if(is_admin() and getRequest('post_type') == 'product'){
+        $object_poster = getRequest('object_poster');
+        $product_permission = getRequest('product_permission');
+        $meta_query = array(
+            'relation' => 'AND',
+        );
+        if(!empty($object_poster)){
+            $meta_query[] = array(
+                'key' => 'object_poster',
+                'value' => $object_poster,
+                'compare' => '='
+            );
+        }
+        if(!empty($product_permission)){
+            $meta_query[] = array(
+                'key' => 'product_permission',
+                'value' => $product_permission,
+                'compare' => '='
+            );
+        }
+        $query->set('meta_query', $meta_query);
+    }
+    // where in frontend
     if (!is_admin() && $query->is_main_query()) {
         if ($query->is_search) {
             $category = getRequest('category');
@@ -482,11 +508,20 @@ function custom_search_filter($query) {
             $room = getRequest('room');
             $direction = getRequest('direction');
             $purpose = getRequest('purpose');
+            $special = getRequest('special');
             $area = getRequest('area');
             $project = getRequest('project');
             $products_per_page = intval(get_option(SHORT_NAME . "_product_pager"));
             $tax_query = array('relation' => 'AND');
-            $meta_query = array('relation' => 'AND');
+            $meta_query = array(
+                'relation' => 'AND',
+                array(
+                    'key' => 'end_time',
+                    'value' => date('Y/m/d', strtotime("today")),
+                    'compare' => '>=',
+                    'type' => 'DATE'
+                )
+            );
             if(!empty($category) and $category > 0){
                 $tax_query[] = array(
                     'taxonomy' => 'product_category',
@@ -506,6 +541,13 @@ function custom_search_filter($query) {
                     'taxonomy' => 'product_purpose',
                     'field'    => 'term_id',
                     'terms'    => array( $purpose ),
+		);
+            }
+            if(!empty($special) and $special > 0){
+                $tax_query[] = array(
+                    'taxonomy' => 'product_special',
+                    'field'    => 'term_id',
+                    'terms'    => array( $special ),
 		);
             }
             if(!empty($area) and $area > 0){
@@ -559,9 +601,10 @@ function custom_search_filter($query) {
             }
             
             $query->set('post_type', 'product');
-            $query->set('orderby', array('meta_value_num', 'post_date'));
+            $query->set('orderby', array('not_in_vip' => 'DESC', 'product_permission' => 'DESC', 'post_date' => 'DESC'));
+//            $query->set('orderby', array('meta_value_num', 'post_date'));
             $query->set('meta_key', 'not_in_vip');
-            $query->set('order', 'DESC');
+//            $query->set('order', 'DESC');
             $query->set('posts_per_page', $products_per_page);
             $query->set('tax_query', $tax_query);
             $query->set('meta_query', $meta_query);
@@ -570,9 +613,19 @@ function custom_search_filter($query) {
             $query->set('posts_per_page', $products_per_page);
         }
         if ($query->is_tax and is_tax('product_category')) {
+            $meta_query = array(
+                array(
+                    'key' => 'end_time',
+                    'value' => date('Y/m/d', strtotime("today")),
+                    'compare' => '>=',
+                    'type' => 'DATE'
+                )
+            );
+            
             $query->set('orderby', array('meta_value_num', 'post_date'));
             $query->set('meta_key', 'not_in_vip');
             $query->set('order', 'DESC');
+            $query->set('meta_query', $meta_query);
         }
         if ($query->is_author) {
             $query->set('post_type', 'product');
@@ -624,16 +677,7 @@ function direction_list() {
  * Lấy giá trị của một Hướng theo key
  */
 function get_direction($key) {
-    $array = array(
-        'dong' => 'Đông',
-        'dong_nam' => 'Đông Nam',
-        'dong_bac' => 'Đông Bắc',
-        'nam' => 'Nam',
-        'bac' => 'Bắc',
-        'tay' => 'Tây',
-        'tay_nam' => 'Tây Nam',
-        'tay_bac' => 'Tây Bắc',
-    );
+    $array = direction_list();
     return $array[$key];
 }
 
@@ -642,15 +686,15 @@ function get_direction($key) {
  */
 function room_list() {
     return array(
-        '1' => '1+',
-        '2' => '2+',
-        '3' => '3+',
-        '4' => '4+',
-        '5' => '5+',
-        '6' => '6+',
-        '7' => '7+',
-        '8' => '8+',
-        '9' => '9+',
+        '1' => '1',
+        '2' => '2',
+        '3' => '3',
+        '4' => '4',
+        '5' => '5',
+        '6' => '6',
+        '7' => '7',
+        '8' => '8',
+        '9' => '9',
     );
 }
 
@@ -658,17 +702,7 @@ function room_list() {
  * Lấy giá trị của một phòng ngủ theo key
  */
 function get_room($key) {
-    $array = array(
-        '1' => '1+',
-        '2' => '2+',
-        '3' => '3+',
-        '4' => '4+',
-        '5' => '5+',
-        '6' => '6+',
-        '7' => '7+',
-        '8' => '8+',
-        '9' => '9+',
-    );
+    $array = room_list();
     return $array[$key];
 }
 
@@ -690,14 +724,7 @@ function unitCurrency_list() {
  * Lấy giá trị của một đơn vị tiền tệ theo key
  */
 function get_unitCurrency($key) {
-    $array = array(
-        'default' => 'Thỏa thuận',
-        'vnd' => 'VND',
-        'usd' => 'USD',
-        'trieu' => 'Triệu',
-        'ty' => 'Tỷ',
-        'vang' => 'Lượng vàng',
-    );
+    $array = unitCurrency_list();
     return $array[$key];
 }
 
@@ -718,12 +745,42 @@ function unitPrice_list() {
  * Lấy giá trị của một đơn vị theo key
  */
 function get_unitPrice($key) {
-    $array = array(
-        'm' => '/m2',
-        'mmonth' => '/m2/tháng',
-        'total' => '/tổng',
-        'month' => '/tháng',
-        'room' => '/phòng',
-    );
+    $array = unitPrice_list();
     return $array[$key];
+}
+
+/**
+ * Danh sách Đối tượng đăng tin
+ */
+function get_object_posters(){
+    return array(
+        'san_bds' => 'Sàn BĐS',
+        'investor' => 'Chủ đầu tư',
+        'chu_nha' => 'Chủ nhà',
+        'broker' => 'Nhà môi giới tự do',
+        'adv' => 'Nhà quảng cáo',
+    );
+}
+
+function get_object_poster($poster){
+    $array = get_object_posters();
+    return $array[$poster];
+}
+
+/**
+ * Danh sách Quyền hạn đối với BĐS
+ */
+function get_product_permissions(){
+    return array(
+        '4' => 'Độc quyền',
+        '3' => 'Chính chủ',
+        '2' => 'Ủy quyền',
+        '1' => 'Giới thiệu',
+        '0' => 'Không xác định',
+    );
+}
+
+function get_product_permission($permission){
+    $array = get_product_permissions();
+    return $array[$permission];
 }

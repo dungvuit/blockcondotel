@@ -26,6 +26,14 @@ function ppo_shortcode_product_carousel2($atts) {
         'orderby' => array('meta_value_num', 'post_date'),
         'meta_key' => 'not_in_vip',
         'order' => 'DESC',
+        'meta_query' => array(
+            array(
+                'key' => 'end_time',
+                'value' => date('Y/m/d', strtotime("today")),
+                'compare' => '>=',
+                'type' => 'DATE'
+            )
+        )
     );
     if(!empty($instance['cat_id']) and $instance['cat_id'] > 0){
         $args['tax_query'] = array(

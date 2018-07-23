@@ -4,11 +4,18 @@ $rent_cat = intval(get_option(SHORT_NAME . "_cat_rent"));
 $args = array(
     'post_type' => 'product',
     'meta_query' => array(
+        'relation' => 'AND',
         array(
             'key' => 'not_in_vip',
             'value' => '1',
             'compare' => '!='
         ),
+        array(
+            'key' => 'end_time',
+            'value' => date('Y/m/d', strtotime("today")),
+            'compare' => '>=',
+            'type' => 'DATE'
+        )
     ),
     'posts_per_page' => 5
 );

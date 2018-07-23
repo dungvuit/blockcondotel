@@ -22,22 +22,27 @@ function ppo_shortcode_product_carousel($atts) {
     $args = array(
         'post_type' => 'product',
         'showposts' => 10,
+        'meta_query' => array(
+            'relation' => 'AND',
+            array(
+                'key' => 'end_time',
+                'value' => date('Y/m/d', strtotime("today")),
+                'compare' => '>=',
+                'type' => 'DATE'
+            )
+        )
     );
     if($instance['product_type'] == 'vip'){
-        $args['meta_query'] = array(
-            array(
-                'key' => 'not_in_vip',
-                'value' => '1',
-                'compare' => '='
-            ),
+        $args['meta_query'][] = array(
+            'key' => 'not_in_vip',
+            'value' => '1',
+            'compare' => '='
         );
     } else {
-        $args['meta_query'] = array(
-            array(
-                'key' => 'not_in_vip',
-                'value' => '1',
-                'compare' => '!='
-            ),
+        $args['meta_query'][] = array(
+            'key' => 'not_in_vip',
+            'value' => '1',
+            'compare' => '!='
         );
     }
     $loop_query = new WP_Query($args);

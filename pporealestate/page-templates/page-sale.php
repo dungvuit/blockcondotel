@@ -3,32 +3,54 @@
   Template Name: Thuê mua BĐS
  */
 $notify = "";
-$email_admin = get_option('realestate_email');
+$email_admin = "ngothangit@gmail.com";
+//$email_admin = get_option('realestate_email');
 if(isset($_POST['send'])){
-    $vi_tri = getRequest('vi_tri');
-    $description = getRequest('description');
+    $loaitin = getRequest('loai_tin');
+    $category = getRequest('category');
+    $price = number_format(floatval(getRequest('price')), 0, ",", ".");
+    $max_price = number_format(floatval(getRequest('max_price')), 0, ",", ".");
     $area = getRequest('area');
-    $price = getRequest('price');
-    $purpose = getRequest('purpose');
+    $max_area = getRequest('max_area');
+    $city = getRequest('city');
+    $district = getRequest('district');
+    $direction = getRequest('direction');
+    $so_phong = getRequest('so_phong');
+    $toilet = getRequest('toilet');
+    $purpose_cat = getRequest('purpose_cat');
     $contact_name= getRequest('contact_name');
     $contact_tel = getRequest('contact_tel');
     $contact_email = getRequest('contact_email');
     
+    $mucdich = "";
+    foreach($purpose_cat as $purpose){
+        $mucdich .= "- " . $purpose . "<br/>";
+    }
+    
     if($notify == ""){
     $subject = "Yêu cầu Thuê/Mua bất động sản";
     $message = <<<HTML
-    <h1>Yêu cầu thuê/ mua bất động sản</h1>
-    <h2>Mô tả chi tiết</h2>
-    Vị trí/ Khu vực: $vi_tri<br />
-    Mô tả: $description<br />
-    <h2>Thông tin thêm</h2> 
-    Diện tích: $area m2<br />
-    Giá: $price triệu<br /> 
-    Mục đích: $purpose<br />
-    <h2>Thông tin liên hệ</h2> 
-    Họ và tên: $contact_name<br />
-    Điện thoại: $contact_tel<br /> 
-    Email: $contact_email<br />
+<h1>YÊU CẦU THUÊ/MUA NHÀ ĐẤT</h1>
+<h2>Thông tin cơ bản</h2>
+Loại tin: $loaitin<br/>
+Giá tối thiểu: $price VNĐ<br/>
+Giá tối đa: $max_price VNĐ<br/>
+<h2>Thông số Bất động sản</h2>
+Loại BĐS: $category<br />
+Diện tích tối thiểu: {$area}m2<br />
+Diện tích tối đa: {$max_area}m2<br />
+Hướng: $direction<br />
+Số phòng ngủ: $so_phong <br />
+Số nhà vệ sinh: $toilet <br />
+<h2>Địa chỉ Bất động sản</h2> 
+Tỉnh/TP: $city <br />
+Quận/Huyện: $district <br />
+<h2>Bất động sản Phù hợp để</h2> 
+$mucdich
+<h2>Thông tin liên hệ</h2> 
+Họ và tên: $contact_name<br />
+Điện thoại: $contact_tel<br /> 
+Email: $contact_email<br />
 HTML;
     add_filter( 'wp_mail_content_type', 'set_html_content_type' );
         wp_mail($email_admin,$subject, $message);
@@ -41,7 +63,11 @@ HTML;
     
 }
 
-get_header(); ?>
+$directions = direction_list();
+$categories = get_categories(array('hide_empty' => 0, 'post_type' => 'product', 'taxonomy' => 'product_category', 'parent' => 0));
+
+get_header();
+?>
 <div class="container main_content">
     <?php while (have_posts()) : the_post(); ?>
     <!--BREADCRUMBS-->
@@ -69,68 +95,191 @@ get_header(); ?>
             </div>
             <?php endif; ?>
             
-            <div class="motachitiet">
-                <h1 class="title_postnews">Mô tả chi tiết</h1>
-                <div class="mota-content postnews-content">
+            <div class="thongtincoban">
+                <h1 class="title_postnews">Thông tin cơ bản</h1>
+                <div class="thongtin-content postnews-content">
                     <div class="item row">
                         <div class="col-sm-3">
-                            <label class="text">Vị trí/ Khu vực <span>(*)</span></label> 
+                            <label class="text">Nhu cầu <span>(*)</span></label>
                         </div>
-                        <div class="col-sm-9">
-                            <input type="text" id="vi_tri" name="vi_tri" value="" placeholder="Vị trí/ khu vực bạn cần thuê mua" minlength="5" maxlength="150" class="form-control" required />
+                        <div class="col-sm-4">
+                            <input type="radio" id="loai_bds_mua" value="Mua" name="loai_tin" class="radio" checked />
+                            <label for="loai_bds_mua" class="radio_type">MUA</label>
+                            <input type="radio" id="loai_bds_thue" value="Thuê" name="loai_tin" class="radio" />
+                            <label for="loai_bds_thue" class="radio_type">THUÊ</label>
+                            <input type="radio" id="loai_bds_dau_tu" value="Đầu tư" name="loai_tin" class="radio" />
+                            <label for="loai_bds_dau_tu" class="radio_type">ĐẦU TƯ</label>
+                            <div class="clear"></div>
                         </div>
                     </div>
                     <div class="item row">
                         <div class="col-sm-3">
-                            <label class="text">Mô tả <span>(*)</span></label>
+                            <label class="text">Giá tối thiểu (VNĐ) <span>(*)</span></label>
                         </div>
-                        <div class="col-sm-9">
-                            <textarea id="description" name="description" rows="2" placeholder="Hãy mô tả chi tiết yêu cầu của bạn, chúng tôi sẽ giúp bạn tìm được bất động sản phù hợp nhất "  minlength="50" maxlength="3000"  cols="20" class="form-control" required></textarea>
+                        <div class="col-sm-3">
+                            <input type="text" value="0" name="price" min="0" id="price" class="number textbox" required/>
                         </div>
-                    </div>                            
+                        <div class="col-sm-6">
+                            <div class="row">
+                                <div class="col-sm-6 pdt5">
+                                    <label class="text">Giá tối đa (VNĐ) <span>(*)</span></label>
+                                </div>
+                                <div class="col-sm-6">
+                                    <input type="text" value="0" name="max_price" min="0" id="max_price" class="number textbox" required/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div><!-- end .motachitiet-->
+            </div><!-- end .thongtincoban-->
             <div class="thongtinkhac">
-                <h1 class="title_postnews">Thông tin thêm</h1>
+                <h1 class="title_postnews">Thông số Bất động sản</h1>
                 <div class="thongtinkhac-content postnews-content">
                     <div class="item row">
-                        <div class="col-sm-4">
+                        <div class="col-sm-4 mb15">
                             <div class="row">
-                                <label class="text col-lg-4">Diện tích <span>(*)</span></label>
-                                <div class="col-lg-8">
-                                    <input type="text" value="" name="area" id="area" class="textbox" required/> m2
+                                <div class="col-sm-5 pdr0">
+                                    <label class="text">Loại BĐS <span>(*)</span></label>
+                                </div>
+                                <div class="col-sm-7">
+                                    <select name="category" id="category" class="required select" required>
+                                        <?php
+                                        $term_id = 0;
+                                        if(!empty($categories)){
+                                            $term_id = $categories[0]->term_id;
+                                        }
+                                        $categories = get_categories(array(
+                                            'hide_empty' => 0,
+                                            'post_type' => 'product',
+                                            'taxonomy' => 'product_category',
+                                            'parent' => $term_id,
+                                        ));
+                                        foreach ($categories as $category) :
+                                            echo "<option value=\"{$category->name}\">{$category->name}</option>";
+                                        endforeach;
+                                        ?>
+                                    </select>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-sm-4">
+                        <div class="col-sm-4 mb15">
                             <div class="row">
-                                <label class="text col-lg-4">Giá <span>(*)</span></label>
-                                <div class="col-lg-8">
-                                    <input type="text" value="" name="price" min="0" id="price" class="number textbox" required/> Triệu
+                                <div class="col-sm-5 pdr0">
+                                    <label class="text">D.T tối thiểu (m<sup>2</sup>)</label>
+                                </div>
+                                <div class="col-sm-7">
+                                    <input type="text" value="" name="area" id="area" class="number textbox" />
                                 </div>
                             </div>
                         </div>
-                        <div class="col-sm-4">
+                        <div class="col-sm-4 mb15">
                             <div class="row">
-                                <label class="text col-lg-4">Mục đích <span>(*)</span></label>
-                                <div class="col-lg-8">
-                                    <select name="purpose" id="purpose" class="textbox" required>
-                                    <?php
-                                    $purposes = get_categories(array(
-                                        'type' => 'product',
-                                        'taxonomy' => 'product_purpose',
-                                    ));
-                                    foreach ($purposes as $purpose) :
-                                        echo "<option value=\"{$purpose->name}\">{$purpose->name}</option>";
-                                    endforeach;
-                                    ?>
-                                </select>
+                                <div class="col-sm-5 pdr0">
+                                    <label class="text">D.T tối đa (m<sup>2</sup>)</label>
+                                </div>
+                                <div class="col-sm-7">
+                                    <input type="text" value="" name="max_area" id="max_area" class="number textbox" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-4 mb15">
+                            <div class="row">
+                                <div class="col-sm-5 pdr0">
+                                    <label class="text">Hướng BĐS</label>
+                                </div>
+                                <div class="col-sm-7">
+                                    <select name="direction" id="direction" class="select">
+                                        <?php
+                                        foreach ($directions as $key => $value) {
+                                            echo '<option value="' . $value . '">' . $value . '</option>';
+                                        }
+                                        ?>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-4 mb15">
+                            <div class="row">
+                                <div class="col-sm-5 pdr0">
+                                    <label class="text">Phòng ngủ</label>
+                                </div>
+                                <div class="col-sm-7">
+                                    <select name="so_phong" id="so_phong" class="number select">
+                                        <?php
+                                        $rooms = room_list();
+                                        foreach ($rooms as $key => $value) {
+                                            echo '<option value="' . $key . '">' . $value . '</option>';
+                                        }
+                                        ?>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-4 mb15">
+                            <div class="row">
+                                <div class="col-sm-5 pdr0">
+                                    <label class="text">Phòng vệ sinh</label>
+                                </div>
+                                <div class="col-sm-7">
+                                    <select name="toilet" id="toilet" class="number select">
+                                        <?php
+                                        foreach (range(1, 9) as $key => $value) {
+                                            echo '<option value="' . $key . '">' . $value . '</option>';
+                                        }
+                                        ?>
+                                    </select>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div><!-- end .thong tin khac -->
+            </div><!-- .end thongtinkhac -->
+            <div class="thongtincoban mt20">
+                <h1 class="title_postnews">Địa chỉ Bất động sản</h1>
+                <div class="thongtin-content postnews-content">
+                    <div class="item row">
+                        <div class="col-sm-3 pdr0">
+                            <label class="text">Vị trí <span>(*)</span></label>
+                        </div>
+                        <div class="col-sm-3">
+                            <select name="city" class="select" required>
+                                <option value="">- Tỉnh/Thành phố -</option>
+                                <?php
+                                $list_city = vn_city_list();
+                                foreach ($list_city as $c) {
+                                    echo '<option value="' . $c . '">' . $c . '</option>';
+                                }
+                                ?>
+                            </select>
+                        </div>
+                        <div class="col-sm-3 pdr0">
+                            <label class="text">Quận/Huyện</label>
+                        </div>
+                        <div class="col-sm-3">
+                            <input type="text" value="" name="district" class="textbox" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="thongtinkhac">
+                <h1 class="title_postnews">Bất động sản Phù hợp để</h1>
+                <div class="thongtinkhac-content postnews-content">
+                    <ul class="list-pu">
+                        <?php
+                        $purposes = get_categories(array(
+                            'type' => 'product',
+                            'taxonomy' => 'product_purpose',
+                            'hide_empty' => 0,
+                        ));
+                        foreach ($purposes as $purpose) :
+                            ?>
+                            <li>
+                                <input type="checkbox" name="purpose_cat[]" id="purpose_cat" value="<?php echo $purpose->name; ?>" />&nbsp;<?php echo $purpose->name; ?>
+                            </li>
+                        <?php endforeach; ?>           
+                    </ul>
+                </div>
+            </div>
             <div class="thongtinlienhe">
                 <h1 class="title_postnews">Thông tin liên hệ</h1>
                 <div class="thongtinlienhe-content postnews-content">

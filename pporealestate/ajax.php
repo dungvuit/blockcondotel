@@ -20,67 +20,110 @@ function get_category_childrens() {
 }
 
 /* ----------------------------------------------------------------------------------- */
-# Add new post
+# Push product to SGD
 /* ----------------------------------------------------------------------------------- */
+function api_push_product() {
+    $api_url = getRequest('api_url');
+    $post_id = intval(getRequest('id'));
+    $product = get_post($post_id);
+    $pushed = get_post_meta($post_id, 'pushed', true);
+    if($product and $pushed != 'yes'){
+        $loai_tin = null;
+        $category = null;
+        $taxonomy = 'product_category';
+        $terms = get_the_terms($post_id, $taxonomy);
+        foreach ($terms as $term) {
+            if($term->parent == 0){
+                $loai_tin = get_term( $term, $taxonomy );
+            } else {
+                $category = get_term( $term, $taxonomy );
+            }
+        }
+        $purpose_cat = array();
+        $purposes = get_the_terms($post_id, 'product_purpose');
+        foreach ($purposes as $purpose) {
+            $purpose_cat[] = $purpose->term_id;
+        }
+        $product_price = array();
+        $prices = get_the_terms($post_id, 'product_price');
+        foreach ($prices as $price) {
+            $product_price[] = $price->term_id;
+        }
+        $product_acreage = array();
+        $acreages = get_the_terms($post_id, 'product_acreage');
+        foreach ($acreages as $acreage) {
+            $product_acreage[] = $acreage->term_id;
+        }
+        $special_cat = array();
+        $specials = get_the_terms($post_id, 'product_special');
+        foreach ($specials as $special) {
+            $special_cat[] = $special->term_id;
+        }
+        
+        $gallery = get_post_meta($post_id, 'gallery', true);
+        $_gallery = array();
+        if(is_array($gallery) and !empty($gallery)){
+            foreach ($gallery as $__gallery) {
+                $_gallery[] = wp_get_attachment_url( $__gallery );
+            }
+        }
 
-function add_new_post() {
-    $request = getRequestAll();
-
-    $error = false;
-    $brand_id = 0;
-    if (strtolower($request['exists_brand']) == "no") {
-        // Create new brand
-        $new_brand = array(
-            'post_type' => 'brand',
-            'post_title' => $request['brand']['title'],
-            'post_content' => "Logo: " . $request['brand']['logo'],
-            'post_status' => 'publish',
-            'post_author' => 1,
+        $args = array(
+            'loai_tin' => $loai_tin->name,
+            'category' => $category->name,
+            'purpose_cat' => $purpose_cat,
+            'product_price' => $product_price,
+            'product_acreage' => $product_acreage,
+            'special_cat' => $special_cat,
+            'post_title' => $product->post_title,
+            'post_content' => $product->post_content,
+            'city' => get_post_meta($post_id, 'city', true),
+            'district' => get_post_meta($post_id, 'district', true),
+            'ward' => get_post_meta($post_id, 'ward', true),
+            'street' => get_post_meta($post_id, 'street', true),
+            'price' => get_post_meta($post_id, 'price', true),
+            'currency' => get_post_meta($post_id, 'currency', true),
+            'unitPrice' => get_post_meta($post_id, 'unitPrice', true),
+            'com' => get_post_meta($post_id, 'com', true),
+            'area' => get_post_meta($post_id, 'area', true),
+            'vi_tri' => get_post_meta($post_id, 'vi_tri', true),
+            'mat_tien' => get_post_meta($post_id, 'mat_tien', true),
+            'duong_truoc_nha' => get_post_meta($post_id, 'duong_truoc_nha', true),
+            'direction' => get_post_meta($post_id, 'direction', true),
+            'so_tang' => get_post_meta($post_id, 'so_tang', true),
+            'so_phong' => get_post_meta($post_id, 'so_phong', true),
+            'toilet' => get_post_meta($post_id, 'toilet', true),
+            'post_video' => get_post_meta($post_id, 'video', true),
+            'post_maps' => get_post_meta($post_id, 'maps', true),
+            'object_poster' => get_post_meta($post_id, 'object_poster', true),
+            'product_permission' => get_post_meta($post_id, 'product_permission', true),
+            'start_time' => get_post_meta($post_id, 'start_time', true),
+            'end_time' => get_post_meta($post_id, 'end_time', true),
+            'contact_name' => get_post_meta($post_id, 'contact_name', true),
+            'contact_tel' => get_post_meta($post_id, 'contact_tel', true),
+            'contact_email' => get_post_meta($post_id, 'contact_email', true),
+            'thumbnail' => get_the_post_thumbnail_url($post_id, 'full'),
+            'gallery' => $_gallery,
         );
-        $brand_id = wp_insert_post($new_brand);
-        wp_set_post_terms($brand_id, array(intval($request['brand']['category'])), 'brand_category');
-        update_post_meta($brand_id, "address", $request['brand']['address']);
-        update_post_meta($brand_id, "city", $request['brand']['city']);
-        update_post_meta($brand_id, "tel", $request['brand']['tel']);
-        update_post_meta($brand_id, "mobile", $request['brand']['mobile']);
-        update_post_meta($brand_id, "email", $request['brand']['email']);
-        update_post_meta($brand_id, "website", $request['brand']['website']);
-        update_post_meta($brand_id, "certificate", "no");
+        $data = http_build_query($args);
+        $ch = curl_init($api_url . "/post_product");
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_USERAGENT, 'PPO/API');
+        $returnValue = curl_exec($ch);
+        curl_close($ch);
+
+        echo $returnValue;
+        $response = json_decode($returnValue);
+        if($response->status == 'success'){
+            update_post_meta($post_id, 'pushed', 'yes');
+        }
     } else {
-        $brand_id = intval($request['brand']['id']);
-    }
-
-    if ($brand_id > 0) {
-        // Create new post
-        $new_post = array(
-            'post_type' => 'post',
-            'post_title' => $request['post']['title'],
-            'post_content' => $request['post']['post_content'],
-            'post_status' => 'draft',
-            'post_category' => array(intval($request['post']['category'])),
-            'post_author' => 1,
-        );
-        $post_id = wp_insert_post($new_post);
-        update_post_meta($post_id, "brand_published", $brand_id);
-        update_post_meta($post_id, "premium", $request['post']['premium']);
-        update_post_meta($post_id, "certificate", "no");
-        update_post_meta($post_id, "tmp_thumb", $request['post']['thumbnail']);
-    } else {
-        $error = true;
-    }
-
-    if ($error) {
-        $response = array(
-            'status' => "error",
-            'message' => "Xảy ra lỗi!"
-        );
-        Response(json_encode($response));
-    } else {
-        $response = array(
-            'status' => "success",
-            'message' => "Đăng thành công!"
-        );
-        Response(json_encode($response));
+        Response(json_encode(array(
+            'status' => 'error',
+            'message' => 'Không hợp lệ!',
+        )));
     }
     exit();
 }

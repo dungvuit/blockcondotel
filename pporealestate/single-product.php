@@ -12,8 +12,8 @@
             <div class="single_product">
                 <h1 class="title_product"><?php the_title(); ?></h1> 
                 <div class="short_info">
-                    <div class="region">
-                        <span>Khu vực:</span> <?php echo get_post_meta(get_the_ID(), "vi_tri", true); ?>
+                    <div class="mb5">
+                        <span class="bold-red">Khu vực:</span> <?php echo get_post_meta(get_the_ID(), "vi_tri", true); ?>
                     </div>
                     <span class="bold-red">Giá: </span>
                     <?php echo get_post_meta(get_the_ID(), "price", true); ?> <?php echo get_unitCurrency(get_post_meta(get_the_ID(), "currency", true));?><?php echo get_unitPrice(get_post_meta(get_the_ID(), "unitPrice", true));?>
@@ -80,8 +80,15 @@
                                     <tr>
                                         <td class="col1">Ngày đăng tin</td>
                                         <td><?php the_time('d-m-Y'); ?> </td>
-                                        <td class="col1">Đường trước nhà</td>
-                                        <td><?php echo get_post_meta(get_the_ID(), "duong_truoc_nha", true) ?></td>
+                                        <td class="col1">Đường vào</td>
+                                        <td>
+                                            <?php
+                                            $duong_truoc_nha = get_post_meta(get_the_ID(), "duong_truoc_nha", true);
+                                            if(!empty($duong_truoc_nha)){
+                                                echo $duong_truoc_nha . ' m';
+                                            }
+                                            ?>
+                                        </td>
                                         <td class="col1">Số phòng tắm</td>
                                         <td><?php echo get_post_meta(get_the_ID(), "toilet", true) ?></td>
                                     </tr>
@@ -98,6 +105,36 @@
                                                 echo '<a href="' . get_permalink($project_id) . '" target="_blank">' . get_the_title($project_id) . '</a>';
                                             }
                                             ?>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="6" class="col1 bold-blue">BĐS PHÙ HỢP ĐỂ</td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="6" class="col1">
+                                            <ul class="purpose-list normal">
+                                            <?php
+                                            $purposes = get_the_terms(get_the_ID(), 'product_purpose');
+                                            foreach($purposes as $purpose){
+                                                echo '<li>- '.$purpose->name.'</li>';
+                                            }
+                                            ?>
+                                            </ul>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="6" class="col1 bold-blue">ĐẶC ĐIỂM CỦA BĐS</td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="6" class="col1">
+                                            <ul class="special-list normal">
+                                            <?php
+                                            $specials = get_the_terms(get_the_ID(), 'product_special');
+                                            foreach($specials as $special){
+                                                echo '<li>- '.$special->name.'</li>';
+                                            }
+                                            ?>
+                                            </ul>
                                         </td>
                                     </tr>
                                     <tr>
@@ -186,6 +223,14 @@
                                 'orderby' => array('rand', 'meta_value_num', 'post_date'),
                                 'meta_key' => 'not_in_vip',
                                 'post__not_in' => array(get_the_ID()),
+                                'meta_query' => array(
+                                    array(
+                                        'key' => 'end_time',
+                                        'value' => date('Y/m/d', strtotime("today")),
+                                        'compare' => '>=',
+                                        'type' => 'DATE'
+                                    )
+                                )
                             ));
                             while ($loop->have_posts()) : $loop->the_post();
                                 echo '<div class="col-xs-6">';
